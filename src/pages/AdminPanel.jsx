@@ -527,6 +527,8 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
   }, [liveScore]);
 
   const [selectedLeagueKey, setSelectedLeagueKey] = useState('');
+  const [leagueSearch, setLeagueSearch] = useState('');
+  const [teamSearch, setTeamSearch] = useState('');
   const [limit, setLimit] = useState(30);
   const [forceRefresh, setForceRefresh] = useState(false);
   const [checkedTeams, setCheckedTeams] = useState({});
@@ -537,14 +539,32 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
     return leagues.find((l) => `${l.tournamentId}:${l.seasonId}` === selectedLeagueKey) || null;
   }, [leagues, selectedLeagueKey]);
 
+  const filteredLeagues = useMemo(() => {
+    const q = String(leagueSearch || '').trim().toLowerCase();
+    if (!q) return leagues;
+    return leagues.filter((l) => {
+      const key = `${l.name} ${l.tournamentId} ${l.seasonId}`.toLowerCase();
+      return key.includes(q);
+    });
+  }, [leagues, leagueSearch]);
+
+  const visibleTeams = useMemo(() => {
+    if (!selectedLeague) return [];
+    const q = String(teamSearch || '').trim().toLowerCase();
+    if (!q) return selectedLeague.teamList;
+    return selectedLeague.teamList.filter((t) =>
+      `${t.teamName || ''} ${t.teamId || ''}`.toLowerCase().includes(q)
+    );
+  }, [selectedLeague, teamSearch]);
+
   function toggleTeam(id) {
     setCheckedTeams((s) => ({ ...s, [id]: !s[id] }));
   }
 
   function toggleAllVisible(on) {
-    if (!selectedLeague) return;
+    if (!visibleTeams.length) return;
     const next = { ...checkedTeams };
-    selectedLeague.teamList.forEach((t) => {
+    visibleTeams.forEach((t) => {
       next[t.teamId] = !!on;
     });
     setCheckedTeams(next);
@@ -633,16 +653,24 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
             Theo giải đấu
           </div>
           <div className="space-y-3">
+            <input
+              type="text"
+              value={leagueSearch}
+              onChange={(e) => setLeagueSearch(e.target.value)}
+              placeholder="Tìm giải: Premier, V-League, id..."
+              className="input"
+            />
             <select
               value={selectedLeagueKey}
               onChange={(e) => {
                 setSelectedLeagueKey(e.target.value);
+                setTeamSearch('');
                 setCheckedTeams({});
               }}
               className="input"
             >
               <option value="">— Chọn giải đấu —</option>
-              {leagues.map((l) => (
+              {filteredLeagues.map((l) => (
                 <option key={`${l.tournamentId}:${l.seasonId}`} value={`${l.tournamentId}:${l.seasonId}`}>
                   {l.name} ({l.teamList.length} CLB)
                 </option>
@@ -681,9 +709,17 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
               </div>
             )}
           </div>
+          <input
+            type="text"
+            value={teamSearch}
+            onChange={(e) => setTeamSearch(e.target.value)}
+            placeholder="Tìm CLB theo tên hoặc teamId..."
+            className="input mb-2"
+            disabled={!selectedLeague}
+          />
           <div className="max-h-48 space-y-1 overflow-auto pr-1 scrollbar-thin">
             {selectedLeague ? (
-              selectedLeague.teamList.map((t) => (
+              visibleTeams.map((t) => (
                 <label
                   key={t.teamId}
                   className="flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-slate-800/60"
@@ -701,6 +737,11 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
             ) : (
               <p className="px-2 py-4 text-center text-[11px] text-slate-500">
                 Chọn 1 giải đấu ở cột trái để liệt kê CLB.
+              </p>
+            )}
+            {selectedLeague && visibleTeams.length === 0 && (
+              <p className="px-2 py-4 text-center text-[11px] text-slate-500">
+                Không có CLB khớp từ khóa "{teamSearch}".
               </p>
             )}
           </div>
@@ -739,6 +780,7 @@ function TopPlayersCrawlerPanel({ token, liveScore, onStatus }) {
   }, [liveScore]);
 
   const [selectedKey, setSelectedKey] = useState('');
+  const [leagueSearch, setLeagueSearch] = useState('');
   const [categories, setCategories] = useState({ goals: true, assists: true, rating: false });
   const [forceRefresh, setForceRefresh] = useState(false);
   const [working, setWorking] = useState(false);
@@ -747,6 +789,14 @@ function TopPlayersCrawlerPanel({ token, liveScore, onStatus }) {
     if (!selectedKey) return null;
     return leagues.find((l) => `${l.tournamentId}:${l.seasonId}` === selectedKey) || null;
   }, [leagues, selectedKey]);
+
+  const filteredLeagues = useMemo(() => {
+    const q = String(leagueSearch || '').trim().toLowerCase();
+    if (!q) return leagues;
+    return leagues.filter((l) =>
+      `${l.name} ${l.tournamentId} ${l.seasonId}`.toLowerCase().includes(q)
+    );
+  }, [leagues, leagueSearch]);
 
   async function handleCrawl() {
     if (!selected) return;
@@ -801,18 +851,27 @@ function TopPlayersCrawlerPanel({ token, liveScore, onStatus }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-[2fr_1fr_auto]">
-        <select
-          value={selectedKey}
-          onChange={(e) => setSelectedKey(e.target.value)}
-          className="input"
-        >
-          <option value="">— Chọn giải đấu —</option>
-          {leagues.map((l) => (
-            <option key={`${l.tournamentId}:${l.seasonId}`} value={`${l.tournamentId}:${l.seasonId}`}>
-              {l.name} · T#{l.tournamentId}/S#{l.seasonId || '?'} ({l.count})
-            </option>
-          ))}
-        </select>
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={leagueSearch}
+            onChange={(e) => setLeagueSearch(e.target.value)}
+            placeholder="Tìm giải: Premier, UCL, id..."
+            className="input"
+          />
+          <select
+            value={selectedKey}
+            onChange={(e) => setSelectedKey(e.target.value)}
+            className="input"
+          >
+            <option value="">— Chọn giải đấu —</option>
+            {filteredLeagues.map((l) => (
+              <option key={`${l.tournamentId}:${l.seasonId}`} value={`${l.tournamentId}:${l.seasonId}`}>
+                {l.name} · T#{l.tournamentId}/S#{l.seasonId || '?'} ({l.count})
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-200">
           {[
             { k: 'goals', label: '⚽ Bàn' },
