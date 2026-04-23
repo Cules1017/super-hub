@@ -8,8 +8,8 @@ function readInitialTheme() {
   try {
     const stored = localStorage.getItem(THEME_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    return prefersDark ? 'dark' : 'light';
+    // Mặc định hệ thống luôn vào giao diện tối nếu user chưa chọn lần nào.
+    return 'dark';
   } catch (_) {
     return 'dark';
   }
