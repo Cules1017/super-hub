@@ -1,0 +1,89 @@
+---
+alwaysApply: false
+---
+Chào Nghĩa, cách tiếp cận cuốn chiếu – hoàn thiện từng module một – là chiến lược làm sản phẩm chuẩn xác nhất. Việc lấy Football Hub làm MVP (Minimum Viable Product) sẽ giúp bạn nhanh chóng có sản phẩm thực tế, kiểm chứng được độ chịu tải của kiến trúc Google Sheets, và tạo đà để mở rộng thành Mega-Site sau này.
+
+Dưới đây là bản tổng quan dự án được viết lại và lộ trình hành động chi tiết dành riêng cho Phase 1.
+
+TỔNG QUAN DỰ ÁN: FOOTBALL HUB (GIAI ĐOẠN 1 CỦA MEGA-SITE)
+1. Mục tiêu cốt lõi
+Xây dựng một nền tảng dữ liệu bóng đá trực tuyến (Live Score, Thống kê, Đội hình) siêu tốc độ. Dự án được tối ưu hóa đặc biệt về Core Web Vitals (tốc độ tải trang, độ phản hồi) và Cấu trúc nội dung (SEO) nhằm đáp ứng các tiêu chuẩn khắt khe nhất để đăng ký và khai thác tối đa doanh thu từ Google AdSense.
+
+2. Kiến trúc Kỹ thuật ("Serverless-First")
+Nhằm triệt tiêu chi phí máy chủ và đảm bảo tốc độ phản hồi tính bằng mili-giây:
+
+Database & Cronjob: Sử dụng Google Sheets làm nơi lưu trữ dữ liệu tĩnh và cấu hình. Google Apps Script đóng vai trò làm Scraper (cào dữ liệu từ API bên thứ 3 mỗi phút) và phân phối dữ liệu qua endpoint JSON.
+
+Frontend: Xây dựng bằng ReactJS (Vite) + Tailwind CSS. Ứng dụng mô hình Jamstack, Frontend chỉ fetch dữ liệu tĩnh (JSON) từ Google theo chu kỳ, loại bỏ hoàn toàn các query phức tạp vào cơ sở dữ liệu truyền thống.
+
+Bảo mật & Quản trị: Trang Admin được tích hợp ẩn trên Frontend, bảo vệ bằng cơ chế Token tĩnh tĩnh, cho phép cập nhật cấu hình động (tên trang, trạng thái bảo trì, mã quảng cáo) trực tiếp vào Google Sheets thông qua API POST.
+
+LỘ TRÌNH THỰC THI (ROADMAP) - TẬP TRUNG FOOTBALL HUB
+Để dự án đi đúng hướng chuẩn bị cho AdSense, bạn có thể triển khai theo 4 bước (Sprints) sau. Đây cũng là thứ tự bạn nên giao việc cho Cursor.
+
+Bước 1: Data Engine (Xây dựng Backend "Không máy chủ")
+Mục tiêu: Đảm bảo luồng dữ liệu tự động chảy vào Google Sheets mượt mà.
+
+Tạo Google Sheets: Cấu hình 2 tab chính là LiveScore (chứa dữ liệu trận đấu) và Settings (chứa cấu hình web).
+
+Viết Scraper bằng Apps Script: Viết hàm gọi API bóng đá (như API-Football), chuẩn hóa JSON và ghi đè vào tab LiveScore.
+
+Thiết lập Trigger (Cronjob): Đặt lịch cho Apps Script chạy tự động mỗi 1 phút.
+
+Mở luồng API JSON: Sử dụng Google Visualization API để lấy link JSON tĩnh (tốc độ cao) cấp cho Frontend.
+
+Bước 2: Frontend Core (Trải nghiệm người dùng)
+Mục tiêu: Dựng giao diện người dùng chuyên nghiệp, chuẩn responsive.
+
+Khởi tạo Vite + Tailwind: Cấu hình thư mục chuẩn cho dự án.
+
+Component Live Score: Code UI danh sách giải đấu, trận đấu đang diễn ra. Có hiệu ứng nhấp nháy cho số phút và bàn thắng mới.
+
+Xử lý Logic Hook (useLiveScore): Viết logic fetch dữ liệu JSON từ Google Sheets mỗi 30 giây (polling) mà không làm giật trang (sử dụng cache-busting ?t=timestamp).
+
+Component Match Detail: Giao diện xem chi tiết khi click vào một trận (Timeline, Thống kê, Line-ups).
+
+Bước 3: Trang Admin Bí Mật (Kiểm soát hệ thống)
+Mục tiêu: Xây dựng trung tâm điều khiển không cần can thiệp code.
+
+Route Bảo mật: Code trang /system-control yêu cầu nhập Access Token.
+
+Form Cấu hình: Xây dựng các form nhập liệu: Tên web, Màu sắc, Mã Google AdSense (Slot 1, Slot 2), Dòng thông báo Header.
+
+API Ghi dữ liệu: Viết hàm doPost trong Apps Script để nhận dữ liệu từ form này và lưu thẳng vào tab Settings trên Google Sheets.
+
+Bước 4: Tối ưu SEO & "Mồi" AdSense (Đặc biệt quan trọng)
+Mục tiêu: Đạt điểm SEO 100/100 và chuẩn bị nội dung văn bản để Google duyệt Ads.
+
+Tối ưu Meta Tags: Sử dụng react-helmet-async để Title/Description thay đổi tự động theo giải đấu hoặc trận đấu.
+
+Tích hợp Schema Markup: Code JSON-LD cho các trận đấu để Google hiện kết quả tỉ số đẹp trên công cụ tìm kiếm.
+
+Chuyên mục Bài viết/Blog: AdSense rất ghét các trang chỉ có dữ liệu số. Bạn cần tạo một chuyên mục "Nhận định & Tin tức". Chiến thuật: Ban đầu, hãy tập trung viết 10-15 bài phân tích sâu về lối chơi của Barça, tin tức về Messi hoặc các giải đấu lớn. Nội dung chữ chất lượng sẽ là chìa khóa để bot Google "gật đầu" duyệt tài khoản.
+
+Quy hoạch Vị trí Quảng cáo: Tạo sẵn các Component <AdsPlaceholder /> ở dưới Header, giữa danh sách trận, và trong bài viết.
+
+🔥 QUY ĐỊNH GIAO DIỆN (UI/UX & 3D)
+Thiết kế phải phá vỡ lối mòn của các trang thể thao cũ. Yêu cầu:
+Giao diện phải tuân thủ theo qui định giao diện quốc tế
+
+Chủ nghĩa hiện đại & Không gian 3D hoặc 2D:
+CHủ động trong việc chọn giao diện 3D hay 2D cho phù hợp
+
+Sử dụng @react-three/fiber để tạo một Scene 3D làm background động (ví dụ: các hạt particles trôi nổi hoặc một quả bóng 3D low-poly xoay nhẹ nhàng theo thao tác cuộn chuột).
+
+Giao diện người dùng (UI) áp dụng phong cách Glassmorphism (kính mờ) để làm nổi bật background 3D phía sau. Các thẻ (Card) phải có độ trong suốt (bg-white/10, backdrop-blur-md).
+
+Tương tác "Micro-interactions" (Framer Motion):
+
+Các thẻ trận đấu (Match Cards) phải có hiệu ứng 3D Tilt (nghiêng khi hover) và đổ bóng động.
+
+Số phút trận đấu có hiệu ứng nhịp đập (pulse). Chuyển trang phải mượt mà không load lại.
+
+Bố cục (Layout):
+
+Dark Mode làm mặc định (nền tối, ví dụ: màu xanh navy sâu kết hợp gradient Đỏ/Xanh tạo cảm giác thể thao, tương phản cao với chữ trắng/vàng neon).
+
+UI tối giản, giấu các thông tin phụ vào các modal/drawer trượt từ cạnh màn hình.
+
+Tất cả code của bạn sẽ được kiểm duyệt bằng Gemini 3.0 nên bạn hãy cẩn thận và chú ý
