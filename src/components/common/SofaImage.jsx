@@ -12,8 +12,20 @@ const SOFA_IMAGE_HOSTS = [
 ];
 
 /**
+ * Proxy ảnh công cộng. Khi Sofa trả 403 ở mọi host (đặc biệt là logo giải đấu
+ * `unique-tournament/{id}/image`), ta đi qua `images.weserv.nl` — nó fetch ảnh
+ * server-side, bỏ Referer, cache CDN, luôn trả 200 nếu ảnh tồn tại.
+ */
+function weservProxy(url) {
+  if (!url) return '';
+  // weserv yêu cầu URL không có scheme.
+  const stripped = String(url).replace(/^https?:\/\//i, '');
+  return 'https://images.weserv.nl/?url=' + encodeURIComponent(stripped) + '&default=1';
+}
+
+/**
  * Nhận 1 URL ảnh SofaScore bất kỳ -> trả về mảng URL fallback theo thứ tự ưu tiên.
- * Các URL ngoài SofaScore được trả về nguyên trạng.
+ * Các URL ngoài SofaScore được trả về nguyên trạng (vẫn qua weserv ở cuối).
  */
 function buildSofaFallbackList(src, extraFallbacks) {
   const list = [];
@@ -24,11 +36,22 @@ function buildSofaFallbackList(src, extraFallbacks) {
 
   if (src) {
     const m = String(src).match(/^https?:\/\/[^/]+(\/.*)$/);
-    if (m && /sofascore\.(app|com)/i.test(src)) {
+    const isSofa = m && /sofascore\.(app|com)/i.test(src);
+    if (isSofa) {
       const path = m[1];
-      SOFA_IMAGE_HOSTS.forEach((host) => push(host + path));
+      // Logo giải đấu (`unique-tournament`) gần như luôn bị 403 ở mọi host -> đi thẳng proxy.
+      const proxyFirst = /\/unique-tournament\//i.test(path);
+      if (proxyFirst) {
+        push(weservProxy('api.sofascore.com' + path));
+        push(weservProxy('api.sofascore.app' + path));
+        SOFA_IMAGE_HOSTS.forEach((host) => push(host + path));
+      } else {
+        SOFA_IMAGE_HOSTS.forEach((host) => push(host + path));
+        SOFA_IMAGE_HOSTS.forEach((host) => push(weservProxy(host + path)));
+      }
     } else {
       push(src);
+      push(weservProxy(src));
     }
   }
 
