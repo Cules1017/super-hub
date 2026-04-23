@@ -34,6 +34,9 @@ const SHEET_TOPPLAYERS   = 'TopPlayers';
 const SHEET_TOURNAMENTS  = 'TournamentInfo';
 
 const SOFA = 'https://api.sofascore.com/api/v1';
+// Host ảnh CDN (dùng cho <img> trên trình duyệt). `api.sofascore.app` hay bị 403 hotlink ->
+// ưu tiên CDN `img.sofascore.com`. Frontend có <SofaImage> tự fallback sang host khác nếu vẫn lỗi.
+const SOFA_IMG = 'https://img.sofascore.com/api/v1';
 const SPORTSDB = 'https://www.thesportsdb.com/api/v1/json/3';
 
 // Các domain mirror của SofaScore – khi host chính bị 403 sẽ auto-retry.
@@ -325,14 +328,20 @@ function doGet(e) {
       const n = Math.max(1, Math.min(50, parseInt(params.n, 10) || 0));
       const items = resolveTopLeagueIds_(n || undefined).map(function (id) {
         const info = getTournamentInfo_(id) || {};
+        const countryName = info.country || (info.category && info.category.name) || '';
+        const categorySlug = (info.category && info.category.slug) || '';
+        const alpha2 = (info.category && info.category.alpha2) || '';
         return {
           tournamentId: id,
           name: info.name || '',
+          display: buildLeagueDisplay_(info.name || '', countryName, categorySlug, alpha2),
           slug: info.slug || '',
           logo: info.logo || '',
           primaryColorHex: info.primaryColorHex || '',
           currentSeasonId: info.currentSeasonId || '',
-          country: info.country || '',
+          country: countryName,
+          categorySlug: categorySlug,
+          categoryAlpha2: alpha2,
         };
       });
       return jsonResponse_({ ok: true, ts: Date.now(), items: items });
@@ -833,7 +842,7 @@ function normalizeSofaEvent_(ev) {
   }
 
   const tId = t.uniqueTournament && t.uniqueTournament.id;
-  const leagueLogo = tId ? SOFA + '/unique-tournament/' + tId + '/image' : '';
+  const leagueLogo = tId ? SOFA_IMG + '/unique-tournament/' + tId + '/image' : '';
 
   // Chỉ lấy tên của uniqueTournament (ví dụ: "Premier League"). Không dùng t.name vì
   // Sofa trả `t.name` = tên phụ giai đoạn ("Regular Season"), dễ nhầm giữa các giải.
@@ -856,10 +865,10 @@ function normalizeSofaEvent_(ev) {
     status: status,
     minute: status === 'LIVE' ? minute : 0,
     home: (ev.homeTeam && ev.homeTeam.name) || '',
-    homeLogo: ev.homeTeam ? SOFA + '/team/' + ev.homeTeam.id + '/image' : '',
+    homeLogo: ev.homeTeam ? SOFA_IMG + '/team/' + ev.homeTeam.id + '/image' : '',
     homeScore: (ev.homeScore && (ev.homeScore.current != null ? ev.homeScore.current : ev.homeScore.display)) || 0,
     away: (ev.awayTeam && ev.awayTeam.name) || '',
-    awayLogo: ev.awayTeam ? SOFA + '/team/' + ev.awayTeam.id + '/image' : '',
+    awayLogo: ev.awayTeam ? SOFA_IMG + '/team/' + ev.awayTeam.id + '/image' : '',
     awayScore: (ev.awayScore && (ev.awayScore.current != null ? ev.awayScore.current : ev.awayScore.display)) || 0,
     startTime: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : '',
     source: 'sofa',
@@ -1377,7 +1386,7 @@ function normalizeLineup_(data) {
           yellowCards: stat.yellowCards || 0,
           redCards: stat.redCards || 0,
           minutesPlayed: stat.minutesPlayed || 0,
-          photo: info.id ? SOFA + '/player/' + info.id + '/image' : '',
+          photo: info.id ? SOFA_IMG + '/player/' + info.id + '/image' : '',
         };
       }),
       missingPlayers: (s.missingPlayers || []).map(function (mp) {
@@ -1488,7 +1497,7 @@ function getTeamOverview_(teamId, tournamentId, seasonId) {
     const shell = buildTeamShellFromLiveScore_(teamId);
     if (shell) return shell;
     return {
-      team: { id: teamId, name: '', shortName: '', logo: SOFA + '/team/' + teamId + '/image' },
+      team: { id: teamId, name: '', shortName: '', logo: SOFA_IMG + '/team/' + teamId + '/image' },
       recentMatches: [],
       upcomingMatches: [],
       standings: [],
@@ -1534,7 +1543,7 @@ function buildTeamShellFromLiveScore_(teamId) {
     return {
       team: {
         id: teamId, name: teamName, shortName: teamName, country: '', venue: '',
-        manager: '', founded: '', logo: SOFA + '/team/' + teamId + '/image',
+        manager: '', founded: '', logo: SOFA_IMG + '/team/' + teamId + '/image',
       },
       recentMatches: recent,
       upcomingMatches: [],
@@ -1576,7 +1585,7 @@ function normalizeTeam_(team) {
     venue: team.venue && team.venue.name ? team.venue.name : '',
     manager: team.manager && team.manager.name ? team.manager.name : '',
     founded: team.founded || '',
-    logo: team.id ? SOFA + '/team/' + team.id + '/image' : '',
+    logo: team.id ? SOFA_IMG + '/team/' + team.id + '/image' : '',
   };
 }
 
@@ -1630,7 +1639,7 @@ function getStandings_(tournamentId, seasonId) {
         rank: r.position || 0,
         teamId: team.id || '',
         teamName: team.name || '',
-        teamLogo: team.id ? SOFA + '/team/' + team.id + '/image' : '',
+        teamLogo: team.id ? SOFA_IMG + '/team/' + team.id + '/image' : '',
         played: r.matches || 0,
         win: r.wins || 0,
         draw: r.draws || 0,
@@ -2224,11 +2233,11 @@ function crawlTopPlayers_(tournamentId, seasonId, category) {
       shortName: String(p.shortName || p.name || ''),
       position: String(p.position || ''),
       jerseyNumber: String(p.jerseyNumber || ''),
-      playerLogo: p.id ? ('https://api.sofascore.app/api/v1/player/' + p.id + '/image') : '',
+      playerLogo: p.id ? ('https://img.sofascore.com/api/v1/player/' + p.id + '/image') : '',
       teamId: Number(team.id || 0),
       teamName: String(team.name || ''),
       teamShortName: String(team.shortName || team.name || ''),
-      teamLogo: team.id ? ('https://api.sofascore.app/api/v1/team/' + team.id + '/image') : '',
+      teamLogo: team.id ? ('https://img.sofascore.com/api/v1/team/' + team.id + '/image') : '',
       goals: Number(stats.goals || 0),
       assists: Number(stats.assists || 0),
       appearances: Number(stats.appearances || 0),
@@ -2421,8 +2430,8 @@ function crawlTournamentInfoFresh_(tournamentId) {
       alpha2: String(category.alpha2 || ''),
     },
     country: String(category.name || ''),
-    logo: 'https://api.sofascore.app/api/v1/unique-tournament/' + ut.id + '/image',
-    logoDark: 'https://api.sofascore.app/api/v1/unique-tournament/' + ut.id + '/image/dark',
+    logo: 'https://img.sofascore.com/api/v1/unique-tournament/' + ut.id + '/image',
+    logoDark: 'https://img.sofascore.com/api/v1/unique-tournament/' + ut.id + '/image/dark',
     currentSeasonId: String(currentSeason.id || ''),
     currentSeasonName: String(currentSeason.name || ''),
     currentSeasonYear: String(currentSeason.year || ''),

@@ -18,6 +18,7 @@ import {
   apiCrawlTopLeaguesAll,
 } from '../config/api.js';
 import { clearStoredToken, getStoredToken } from './AdminLogin.jsx';
+import SofaImage from '../components/common/SofaImage.jsx';
 
 /**
  * Nhận diện kiểu input dựa vào key + giá trị hiện tại.
@@ -161,10 +162,21 @@ export default function AdminPanel() {
   const availableLeagues = useMemo(() => {
     const map = {};
     (liveScore || []).forEach((m) => {
-      const name = String(m.league || '').trim();
+      const key = m.tournamentId ? `t:${m.tournamentId}` : `n:${m.country || ''}|${m.league || ''}`;
+      const name = String(m.leagueDisplay || (m.country ? `${m.country} · ${m.league}` : m.league) || '').trim();
       if (!name) return;
-      if (!map[name]) map[name] = { name, count: 0, logo: m.leagueLogo || '' };
-      map[name].count += 1;
+      if (!map[key]) {
+        map[key] = {
+          key,
+          name,
+          rawName: m.league || '',
+          country: m.country || '',
+          tournamentId: m.tournamentId || '',
+          count: 0,
+          logo: m.leagueLogo || '',
+        };
+      }
+      map[key].count += 1;
     });
     return Object.values(map).sort((a, b) => b.count - a.count);
   }, [liveScore]);
@@ -469,7 +481,7 @@ function FeaturedLeagueEditor({ value, onChange, availableLeagues }) {
             const active = !!selectedSet[l.name.toLowerCase()];
             return (
               <button
-                key={l.name}
+                key={l.key || l.name}
                 type="button"
                 onClick={() => toggle(l.name)}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs transition ${
@@ -477,9 +489,9 @@ function FeaturedLeagueEditor({ value, onChange, availableLeagues }) {
                     ? 'bg-cyan-400/20 text-cyan-200 ring-1 ring-cyan-400/40'
                     : 'bg-slate-900/50 text-slate-300 hover:bg-slate-800'
                 }`}
-                title={`${l.name} (${l.count} trận)`}
+                title={`${l.name}${l.tournamentId ? ` · id ${l.tournamentId}` : ''} (${l.count} trận)`}
               >
-                {l.logo ? <img src={l.logo} alt="" className="h-4 w-4 rounded-full bg-slate-800 object-contain" /> : null}
+                {l.logo ? <SofaImage src={l.logo} alt="" className="h-4 w-4 rounded-full bg-slate-800 object-contain" /> : null}
                 <span>{l.name}</span>
                 <span className="text-[10px] opacity-70">({l.count})</span>
               </button>
@@ -501,7 +513,7 @@ function TeamCrawlerPanel({ token, liveScore, onStatus }) {
         map[key] = {
           tournamentId: String(m.tournamentId),
           seasonId: String(m.seasonId || ''),
-          name: m.league || 'Không rõ giải',
+          name: m.leagueDisplay || (m.country ? `${m.country} · ${m.league}` : m.league) || 'Không rõ giải',
           logo: m.leagueLogo || '',
           teams: {},
         };
@@ -716,7 +728,7 @@ function TopPlayersCrawlerPanel({ token, liveScore, onStatus }) {
         map[key] = {
           tournamentId: String(m.tournamentId),
           seasonId: String(m.seasonId || ''),
-          name: m.league || 'Không rõ giải',
+          name: m.leagueDisplay || (m.country ? `${m.country} · ${m.league}` : m.league) || 'Không rõ giải',
           logo: m.leagueLogo || '',
           count: 0,
         };

@@ -6,6 +6,7 @@ import MatchDetailDrawer from '../components/sport/MatchDetailDrawer.jsx';
 import TopPlayersPanel from '../components/sport/TopPlayersPanel.jsx';
 import AdsPlaceholder from '../components/ads/AdsPlaceholder.jsx';
 import SEO from '../components/ui/SEO.jsx';
+import SofaImage from '../components/common/SofaImage.jsx';
 
 const FAV_KEY = 'mega_hub_favorite_teams';
 
@@ -267,11 +268,10 @@ export default function SportHub() {
                 <div className="mb-3 flex items-center gap-3">
                   <span className="inline-flex h-5 w-1 rounded-full bg-gradient-to-b from-cyan-400 to-indigo-500" />
                   {group.logo && (
-                    <img
+                    <SofaImage
                       src={group.logo}
                       alt=""
                       className="h-6 w-6 rounded-full bg-slate-900/40 object-contain"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   )}
                   <h2 className="section-title">{group.display}</h2>
@@ -321,12 +321,9 @@ function LeagueLogoButton({ league, active, onClick }) {
       aria-label={label}
     >
       {league.logo ? (
-        <img
+        <SofaImage
           src={league.logo}
           alt=""
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
         />
       ) : (
         <span className="text-[10px] font-bold">

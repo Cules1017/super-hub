@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { apiFetchMatchDetail, apiFetchTeamOverview } from '../../config/api.js';
+import SofaImage from '../common/SofaImage';
 
 export default function MatchDetailDrawer({ match, onClose }) {
   const [tab, setTab] = useState('lineup');
@@ -97,9 +98,9 @@ function Header({ match, onClose, onTeamClick }) {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-400">
           {match.leagueLogo && (
-            <img src={match.leagueLogo} alt="" className="h-5 w-5 rounded-full bg-slate-800 object-contain" />
+            <SofaImage src={match.leagueLogo} alt="" className="h-5 w-5 rounded-full bg-slate-800 object-contain" />
           )}
-          <span>{match.country ? `${match.country} · ` : ''}{match.league}</span>
+          <span>{match.leagueDisplay || (match.country ? `${match.country} · ${match.league}` : match.league)}</span>
         </div>
         <button onClick={onClose} className="btn-ghost text-xs" aria-label="Close">✕</button>
       </div>
@@ -138,7 +139,7 @@ function TeamRow({ name, logo, align, onClick }) {
       className={`flex items-center gap-3 rounded-lg p-1 transition hover:bg-white/5 ${align === 'right' ? 'flex-row-reverse text-right' : ''}`}
     >
       {logo ? (
-        <img src={logo} alt={name} className="h-10 w-10 rounded-full bg-slate-800 object-contain ring-2 ring-white/10" />
+        <SofaImage src={logo} alt={name} className="h-10 w-10 rounded-full bg-slate-800 object-contain ring-2 ring-white/10" />
       ) : (
         <div className="h-10 w-10 rounded-full bg-slate-800 ring-2 ring-white/10" />
       )}
@@ -343,7 +344,7 @@ function StandingsView({ standings, match, onTeamClick }) {
   return (
     <div className="glass overflow-hidden">
       <div className="border-b border-white/10 px-4 py-3 text-sm text-slate-300">
-        Bảng xếp hạng · {match.league}
+        Bảng xếp hạng · {match.leagueDisplay || (match.country ? `${match.country} · ${match.league}` : match.league)}
       </div>
       <div className="max-h-[60vh] overflow-auto scrollbar-thin">
         <table className="w-full text-xs">
@@ -369,7 +370,7 @@ function StandingsView({ standings, match, onTeamClick }) {
                     onClick={() => onTeamClick?.({ id: r.teamId, name: r.teamName, logo: r.teamLogo })}
                     className="flex items-center gap-2 text-left hover:text-cyan-300"
                   >
-                    {r.teamLogo && <img src={r.teamLogo} alt="" className="h-5 w-5 rounded-full bg-slate-800 object-contain" />}
+                    {r.teamLogo && <SofaImage src={r.teamLogo} alt="" className="h-5 w-5 rounded-full bg-slate-800 object-contain" />}
                     <span className="truncate">{r.teamName}</span>
                   </button>
                 </td>
@@ -421,7 +422,7 @@ function TeamQuickDrawer({ team, tournamentId, seasonId, onClose }) {
           <div className="sticky top-0 border-b border-white/10 bg-slate-950/95 p-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {team.logo ? <img src={team.logo} alt="" className="h-8 w-8 rounded-full bg-slate-800 object-contain" /> : null}
+                {team.logo ? <SofaImage src={team.logo} alt="" className="h-8 w-8 rounded-full bg-slate-800 object-contain" /> : null}
                 <div className="font-bold">{team.name}</div>
               </div>
               <button onClick={onClose} className="btn-ghost text-xs">Đóng</button>
@@ -490,12 +491,11 @@ function TeamLogo({ src, fallbackId, name, size = 20 }) {
     );
   }
   return (
-    <img
+    <SofaImage
       src={final}
       alt={name || ''}
       width={size}
       height={size}
-      loading="lazy"
       className="rounded-full bg-slate-800 object-contain"
       onError={(e) => {
         e.currentTarget.style.visibility = 'hidden';
@@ -510,14 +510,13 @@ function RecentMatchRow({ match }) {
     <div className="rounded-lg bg-white/5 px-2 py-2 text-xs">
       <div className="mb-1 flex items-center gap-1.5 text-[10px] text-slate-500">
         {leagueLogo && (
-          <img
+          <SofaImage
             src={leagueLogo}
             alt=""
             className="h-3 w-3 rounded-full bg-slate-800 object-contain"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
         )}
-        <span className="truncate">{match.league}</span>
+        <span className="truncate">{match.leagueDisplay || match.league}</span>
         <span className="opacity-60">·</span>
         <span>{match.status}</span>
       </div>

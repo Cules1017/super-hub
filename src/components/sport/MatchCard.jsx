@@ -1,16 +1,13 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import SofaImage from '../common/SofaImage';
 
 function TeamBadge({ name, logo, color = 'from-cyan-400 to-indigo-500' }) {
   if (logo) {
     return (
-      <img
+      <SofaImage
         src={logo}
         alt={name}
         className="h-10 w-10 rounded-full bg-slate-800 object-cover ring-2 ring-white/10"
-        loading="lazy"
-        onError={(e) => {
-          e.currentTarget.style.display = 'none';
-        }}
       />
     );
   }
@@ -75,12 +72,10 @@ export default function MatchCard({ match, onClick, favoriteTeamIds = [], onTogg
       <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wider text-slate-400">
         <span className="flex min-w-0 items-center gap-1.5">
           {match.leagueLogo && (
-            <img
+            <SofaImage
               src={match.leagueLogo}
               alt=""
               className="h-4 w-4 shrink-0 rounded-full bg-slate-100 object-contain p-0.5"
-              loading="lazy"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           )}
           <span className="truncate font-bold">

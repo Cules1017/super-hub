@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetchTopPlayers } from '../../config/api.js';
+import SofaImage from '../common/SofaImage';
 
 const CATEGORIES = [
   { key: 'goals', label: 'Vua phá lưới', icon: '⚽', statLabel: 'Bàn' },
@@ -151,11 +152,11 @@ function PlayerRow({ rank, player, category, statLabel }) {
 }
 
 function PlayerAvatar({ player }) {
-  const [src, setSrc] = useState(
+  const src =
     player.playerLogo ||
-      (player.playerId ? `https://api.sofascore.app/api/v1/player/${player.playerId}/image` : '')
-  );
-  if (!src) {
+    (player.playerId ? `https://img.sofascore.com/api/v1/player/${player.playerId}/image` : '');
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
     return (
       <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-xs font-bold text-white">
         {initials(player.name)}
@@ -163,29 +164,27 @@ function PlayerAvatar({ player }) {
     );
   }
   return (
-    <img
+    <SofaImage
       src={src}
       alt=""
       className="h-10 w-10 flex-none rounded-full bg-white/10 object-cover"
-      onError={() => setSrc('')}
+      onError={() => setFailed(true)}
     />
   );
 }
 
 function TeamLogo({ team, size = 14 }) {
-  const [src, setSrc] = useState(
-    team.teamLogo || (team.teamId ? `https://api.sofascore.app/api/v1/team/${team.teamId}/image` : '')
-  );
+  const src =
+    team.teamLogo || (team.teamId ? `https://img.sofascore.com/api/v1/team/${team.teamId}/image` : '');
   if (!src) return null;
   return (
-    <img
+    <SofaImage
       src={src}
       alt=""
       width={size}
       height={size}
       className="rounded-sm bg-white/20"
       style={{ width: size, height: size }}
-      onError={() => setSrc('')}
     />
   );
 }
